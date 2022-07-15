@@ -1,0 +1,11 @@
+all:
+  vars:
+    ansible_ssh_extra_args: -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no
+    install_drive_partition: '{{ install_drive }}' # for partition with extra char like nvme0n1p1
+
+  hosts:
+    test:
+      ansible_user: root
+
+      install_drive: /dev/nvme0n1
+      install_drive_partition: '{{ install_drive }}p'
