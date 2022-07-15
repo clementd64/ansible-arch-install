@@ -6,6 +6,11 @@ all:
   hosts:
     test:
       ansible_user: root
-
-      install_drive: /dev/nvme0n1
-      install_drive_partition: '{{ install_drive }}p'
+      install_drive: /dev/sda
+      lvm_volume:
+        - name: root
+          size: 10g
+          mount: /
+        - name: docker
+          size: 5g
+          mount: /var/lib/docker

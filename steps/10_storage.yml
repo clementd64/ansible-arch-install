@@ -34,29 +34,27 @@
     - name: Create LVM logical volume
       lvol:
         vg: primary
-        lv:  root
-        size: 20g
+        lv:  '{{ item.name }}'
+        size: '{{ item.size }}'
+      loop: '{{ lvm_volume }}'
 
-    - name: Create EFI fs
+    - name: Create EFI filesystem
       filesystem:
         dev: '{{ install_drive_partition }}2'
         fstype: vfat
         opts: -F32
         force: yes
 
-    - name: Create root fs
+    - name: Create logical volume filesystem
       filesystem:
-        dev: '/dev/mapper/primary-root'
-        fstype: xfs
+        dev: '/dev/mapper/primary-{{ item.name }}'
+        fstype: '{{ item.type | default("xfs") }}'
         force: yes
+      loop: '{{ lvm_volume }}'
 
-    - name: Mount root
-      command: mount /dev/mapper/primary-root /mnt
-
-    - name: Create mountpoint for boot volume
-      file:
-        path: /mnt/boot
-        state: directory
+    - name: Mount logical volume
+      shell: mkdir -p /mnt{{ item.mount }} && mount /dev/mapper/primary-{{ item.name }} /mnt{{ item.mount }}
+      loop: '{{ lvm_volume }}'
 
     - name: Mount boot
-      command: mount {{ install_drive_partition }}2 /mnt/boot
+      shell: mkdir -p /mnt/boot && mount {{ install_drive_partition }}2 /mnt/boot
