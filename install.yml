@@ -14,3 +14,4 @@
   tasks:
     - import_tasks: steps/00_preflight.yml
     - import_tasks: steps/10_storage.yml
+    - import_tasks: steps/20_bootstrap.yml

@@ -1,8 +1,4 @@
 all:
-  vars:
-    ansible_connection: local
-    install_drive_partition: '{{ install_drive }}' # for partition with extra char like nvme0n1p1
-
   hosts:
     test:
       install_drive: /dev/sda
@@ -13,3 +9,34 @@ all:
         - name: docker
           size: 5g
           mount: /var/lib/docker
+
+  vars:
+    ansible_connection: local
+    install_drive_partition: '{{ install_drive }}' # for partition with extra char like nvme0n1p1
+
+    pacstrap_packages:
+      # base packages
+      - base
+      - iptables-nft # why nftables is not the default ?
+      - base-devel
+      - linux
+      #- linux-firmware
+      - '{{ ucode | default("") }}'
+      - efibootmgr
+      - iwd
+
+      # utilities
+      - sudo
+      - python # for ansible
+      - vim
+      - git
+
+      # disk management
+      - cryptsetup
+      - lvm2
+      - xfsprogs
+
+      # man pages
+      - man-db
+      - man-pages
+      - texinfo

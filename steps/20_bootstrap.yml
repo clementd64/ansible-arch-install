@@ -1,0 +1,67 @@
+- name: BOOTSTRAP | pacstrap
+  command: pacstrap /mnt {{ pacstrap_packages | join(' ') }}
+
+- name: BOOTSTRAP | gen fstab
+  shell: genfstab /mnt > /mnt/etc/fstab
+
+- name: BOOTSTRAP | Go to chroot
+  set_fact:
+    ansible_connection: chroot
+    ansible_host: /mnt
+    ansible_chroot_exe: arch-chroot
+
+- name: BOOTSTRAP | Set local timezone
+  command: ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
+
+- name: BOOTSTRAP | Generate adjtime file
+  command: hwclock --systohc
+
+- name: BOOTSTRAP | Configure locale.gen
+  lineinfile:
+    dest: /etc/locale.gen
+    regexp: '{{ item.regex }}'
+    line: '{{ item.line }}'
+  loop:
+    - { regex: 'en_US\.UTF-8 UTF-8', line: 'en_US.UTF-8 UTF-8'}
+    - { regex: 'fr_FR\.UTF-8 UTF-8', line: 'fr_FR.UTF-8 UTF-8'}
+
+- name: BOOTSTRAP | Generate locale.conf
+  command: locale-gen
+
+- name: BOOTSTRAP | Create locale.conf
+  copy:
+    content: 'LANG=en_US.UTF-8'
+    dest: /etc/locale.conf
+
+- name: BOOTSTRAP | Set console keymap
+  copy:
+    content: 'KEYMAP=fr'
+    dest: /etc/vconsole.conf
+
+- name: BOOTSTRAP | Set hostname
+  copy:
+    content: '{{ inventory_hostname }}'
+    dest: /etc/hostname
+
+- name: BOOTSTRAP | Set hosts
+  copy:
+    content: |
+      127.0.0.1  localhost '{{ inventory_hostname }}'
+      ::1        localhost '{{ inventory_hostname }}' ip6-localhost ip6-loopback
+      ff02::1    ip6-allnodes
+      ff02::2    ip6-allrouters
+    dest: /etc/hosts
+
+# no base hook because only used as recovery shell when using systemd hook and the root user is locked
+# no fsck because xfs perform check on fs mount
+- name: BOOTSTRAP | Add mkinitcpio.conf hooks
+  lineinfile:
+    dest: /etc/mkinitcpio.conf
+    regexp: ^HOOKS=
+    line: HOOKS=(systemd autodetect keyboard sd-vconsole modconf block sd-encrypt lvm2 filesystems)
+
+- name: BOOTSTRAP | Create new initramfs
+  command: mkinitcpio -p linux
+
+- name: BOOTSTRAP | Setup EFI entry
+  shell: efibootmgr --disk {{ install_drive }} --part 2 --create --label "Arch Linux" --loader /vmlinuz-linux --unicode "rw rd.luks.name=$(blkid {{ install_drive_partition }}1 -o export | grep '^UUID=' | cut -d= -f2)=primary root=/dev/primary/{{ lvm_volume[0].name }} rw {% if ucode is defined %}initrd=\{{ ucode }}.img{% endif %} initrd=\initramfs-linux.img" --verbose

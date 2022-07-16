@@ -1,11 +1,28 @@
-- name: Sync NTP
+- name: PREFLIGHT | Check if EFI system
+  stat:
+    path: /sys/firmware/efi/efivars
+  register: efi_vars
+
+- name: PREFLIGHT | Check if EFI system
+  fail: { msg: "This host is not an EFI host" }
+  when: not efi_vars.stat.exists
+
+- name: PREFLIGHT | Check archiso
+  fail: { msg: "This host is not booted from the Arch install media!" }
+  when: ansible_nodename != 'archiso'
+
+- name: PREFLIGHT | Check xfs root partition
+  fail: { msg: "Using a root partition other than xfs is not supported" }
+  when: 'lvm_volume[0].type is defined and lvm_volume[0].type != "xfs"'
+
+- name: PREFLIGHT | Sync NTP
   command: timedatectl set-ntp true
 
-- name: unmount fs
+- name: PREFLIGHT | unmount fs
   command: umount {{ ['/mnt'] | product(lvm_volume | map(attribute='mount') | difference(['/'])) | map('join') | reverse | join(" ") }} /mnt/boot /mnt
   ignore_errors: yes
 
-- name: Remote volume group
+- name: PREFLIGHT | Remote volume group
   lvg:
     vg: primary
     state: absent
@@ -13,12 +30,12 @@
     force: yes
   ignore_errors: yes
 
-- name: Remove LUKS volume
+- name: PREFLIGHT | Remove LUKS volume
   luks_device:
     state: absent
     name: primary
   ignore_errors: yes
 
-- name: Wipe drive signature
+- name: PREFLIGHT | Wipe drive signature
   command: find /dev -wholename "{{ install_drive }}" -exec wipefs --force --all {} \;
   ignore_errors: yes
