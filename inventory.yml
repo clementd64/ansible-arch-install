@@ -1,11 +1,10 @@
 all:
   vars:
-    ansible_ssh_extra_args: -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no
+    ansible_connection: local
     install_drive_partition: '{{ install_drive }}' # for partition with extra char like nvme0n1p1
 
   hosts:
     test:
-      ansible_user: root
       install_drive: /dev/sda
       lvm_volume:
         - name: root

@@ -1,60 +1,58 @@
-- become: true
-  block:
-    - name: Create LVM partition
-      parted:
-        name: primary
-        label: gpt
-        device: '{{ install_drive }}'
-        number: 1
-        part_start: 512MB
-        state: present
+- name: Create LVM partition
+  parted:
+    name: primary
+    label: gpt
+    device: '{{ install_drive }}'
+    number: 1
+    part_start: 512MB
+    state: present
 
-    - name: Create boot partition
-      parted:
-        name: boot
-        label: 'gpt'
-        device: '{{ install_drive }}'
-        number: 2
-        part_end: 512MB
-        flags: [boot, esp]
-        state: present
+- name: Create boot partition
+  parted:
+    name: boot
+    label: 'gpt'
+    device: '{{ install_drive }}'
+    number: 2
+    part_end: 512MB
+    flags: [boot, esp]
+    state: present
 
-    - name: Create and open LUKS volume
-      luks_device:
-        device: '{{ install_drive_partition }}1'
-        state: opened
-        name: primary
-        passphrase: '{{ luks_passphrase }}'
+- name: Create and open LUKS volume
+  luks_device:
+    device: '{{ install_drive_partition }}1'
+    state: opened
+    name: primary
+    passphrase: '{{ luks_passphrase }}'
 
-    - name: Create LVM volume group
-      lvg:
-        vg: primary
-        pvs: /dev/mapper/primary
+- name: Create LVM volume group
+  lvg:
+    vg: primary
+    pvs: /dev/mapper/primary
 
-    - name: Create LVM logical volume
-      lvol:
-        vg: primary
-        lv:  '{{ item.name }}'
-        size: '{{ item.size }}'
-      loop: '{{ lvm_volume }}'
+- name: Create LVM logical volume
+  lvol:
+    vg: primary
+    lv:  '{{ item.name }}'
+    size: '{{ item.size }}'
+  loop: '{{ lvm_volume }}'
 
-    - name: Create EFI filesystem
-      filesystem:
-        dev: '{{ install_drive_partition }}2'
-        fstype: vfat
-        opts: -F32
-        force: yes
+- name: Create EFI filesystem
+  filesystem:
+    dev: '{{ install_drive_partition }}2'
+    fstype: vfat
+    opts: -F32
+    force: yes
 
-    - name: Create logical volume filesystem
-      filesystem:
-        dev: '/dev/mapper/primary-{{ item.name }}'
-        fstype: '{{ item.type | default("xfs") }}'
-        force: yes
-      loop: '{{ lvm_volume }}'
+- name: Create logical volume filesystem
+  filesystem:
+    dev: '/dev/mapper/primary-{{ item.name }}'
+    fstype: '{{ item.type | default("xfs") }}'
+    force: yes
+  loop: '{{ lvm_volume }}'
 
-    - name: Mount logical volume
-      shell: mkdir -p /mnt{{ item.mount }} && mount /dev/mapper/primary-{{ item.name }} /mnt{{ item.mount }}
-      loop: '{{ lvm_volume }}'
+- name: Mount logical volume
+  shell: mkdir -p /mnt{{ item.mount }} && mount /dev/mapper/primary-{{ item.name }} /mnt{{ item.mount }}
+  loop: '{{ lvm_volume }}'
 
-    - name: Mount boot
-      shell: mkdir -p /mnt/boot && mount {{ install_drive_partition }}2 /mnt/boot
+- name: Mount boot
+  shell: mkdir -p /mnt/boot && mount {{ install_drive_partition }}2 /mnt/boot

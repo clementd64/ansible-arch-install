@@ -1,26 +1,24 @@
-- become: true
-  block:
-    - name: Sync NTP
-      command: timedatectl set-ntp true
+- name: Sync NTP
+  command: timedatectl set-ntp true
 
-    - name: unmount fs
-      command: umount {{ ['/mnt'] | product(lvm_volume | map(attribute='mount') | difference(['/'])) | map('join') | reverse | join(" ") }} /mnt/boot /mnt
-      ignore_errors: yes
+- name: unmount fs
+  command: umount {{ ['/mnt'] | product(lvm_volume | map(attribute='mount') | difference(['/'])) | map('join') | reverse | join(" ") }} /mnt/boot /mnt
+  ignore_errors: yes
 
-    - name: Remote volume group
-      lvg:
-        vg: primary
-        state: absent
-        pvs: primary
-        force: yes
-      ignore_errors: yes
+- name: Remote volume group
+  lvg:
+    vg: primary
+    state: absent
+    pvs: primary
+    force: yes
+  ignore_errors: yes
 
-    - name: Remove LUKS volume
-      luks_device:
-        state: absent
-        name: primary
-      ignore_errors: yes
+- name: Remove LUKS volume
+  luks_device:
+    state: absent
+    name: primary
+  ignore_errors: yes
 
-    - name: Wipe drive signature
-      command: find /dev -wholename "{{ install_drive }}" -exec wipefs --force --all {} \;
-      ignore_errors: yes
+- name: Wipe drive signature
+  command: find /dev -wholename "{{ install_drive }}" -exec wipefs --force --all {} \;
+  ignore_errors: yes
