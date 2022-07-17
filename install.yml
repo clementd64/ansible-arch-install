@@ -1,17 +1,21 @@
 ---
 - hosts: all
+  vars:
+    ansible_connection: local
   vars_prompt:
     - name: luks_passphrase
       prompt: LUKS passphrase
       private: yes
       confirm: yes
-#    - name: user_password
-#      prompt: user password
-#      private: yes
-#      confirm: yes
-#      encrypt: sha512_crypt
-#      salt_size: 16
+    - name: user_password
+      prompt: user password
+      private: yes
+      confirm: yes
+      encrypt: sha512_crypt
+      salt_size: 16
   tasks:
     - import_tasks: steps/00_preflight.yml
     - import_tasks: steps/10_storage.yml
     - import_tasks: steps/20_bootstrap.yml
+    - import_tasks: steps/21_user.yml
+    - import_tasks: steps/30_base.yml

@@ -1,5 +1,5 @@
 - name: BOOTSTRAP | pacstrap
-  command: pacstrap /mnt {{ pacstrap_packages | join(' ') }}
+  shell: pacstrap /mnt {{ pacstrap_packages | join(' ') }} </dev/tty >/dev/tty 2>&1
 
 - name: BOOTSTRAP | gen fstab
   shell: genfstab /mnt > /mnt/etc/fstab
@@ -51,6 +51,20 @@
       ff02::1    ip6-allnodes
       ff02::2    ip6-allrouters
     dest: /etc/hosts
+
+- name: BOOTSTRAP | Copy network config files
+  copy:
+    src: files/systemd-networkd/{{ item }}
+    dest: /etc/systemd/network/{{ item }}
+    owner: root
+    group: root
+    mode: 0644
+  loop:
+    - 20-ethernet.network
+    - 20-wlan.network
+
+- name: BOOTSTRAP | Enable systemd base services
+  command: systemctl enable systemd-networkd.service systemd-resolved.service
 
 # no base hook because only used as recovery shell when using systemd hook and the root user is locked
 # no fsck because xfs perform check on fs mount

@@ -1,0 +1,6 @@
+---
+- hosts: all
+  vars:
+    ansible_connection: local
+  tasks:
+    - import_tasks: steps/30_base.yml

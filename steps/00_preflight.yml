@@ -15,6 +15,15 @@
   fail: { msg: "Using a root partition other than xfs is not supported" }
   when: 'lvm_volume[0].type is defined and lvm_volume[0].type != "xfs"'
 
+- name: PREFLIGHT | Generate the chroot wrapper
+  copy:
+    content: |
+      #!/bin/sh
+      export HOME=/home/clement
+      exec arch-chroot -u clement:clement "$@"
+    dest: /tmp/ansible-arch-install-chroot
+    mode: 0755
+
 - name: PREFLIGHT | Sync NTP
   command: timedatectl set-ntp true
 

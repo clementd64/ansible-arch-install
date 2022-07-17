@@ -1,0 +1,22 @@
+- name: BASE | Check whether yay is already installed
+  register: yay_exists
+  stat:
+    path: /usr/bin/yay
+
+- name: BASE | Install yay
+  shell: |
+    git clone https://aur.archlinux.org/yay.git /tmp/yay;
+    cd /tmp/yay;
+    makepkg -si --noconfirm </dev/tty >/dev/tty 2>&1;
+    cd -; rm -rf /tmp/yay
+  when: not yay_exists.stat.exists
+
+- name: BASE | Install packages
+  shell: yay -S --needed --noconfirm {{ packages | flatten | join(' ') }} </dev/tty >/dev/tty 2>&1
+
+- name: BASE | Install ansible 2.9
+  command: pip install ansible>=2.9,<2.10
+
+- name: BASE | Enable systemd service
+  command: systemctl enable {{ systemd_service_to_enable | join(' ') }}
+  become: true

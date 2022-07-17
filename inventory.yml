@@ -1,17 +1,18 @@
 all:
   hosts:
     test:
-      install_drive: /dev/sda
+      install_drive: /dev/nvme0n1
+      install_drive_partition: '{{ install_drive }}p'
+      ucode: amd-ucode
       lvm_volume:
         - name: root
-          size: 10g
+          size: 100g
           mount: /
         - name: docker
-          size: 5g
+          size: 50g
           mount: /var/lib/docker
 
   vars:
-    ansible_connection: local
     install_drive_partition: '{{ install_drive }}' # for partition with extra char like nvme0n1p1
 
     pacstrap_packages:
@@ -20,12 +21,12 @@ all:
       - iptables-nft # why nftables is not the default ?
       - base-devel
       - linux
-      #- linux-firmware
+      - linux-firmware
       - '{{ ucode | default("") }}'
       - efibootmgr
       - iwd
 
-      # utilities
+      # utils
       - sudo
       - python # for ansible
       - vim
@@ -40,3 +41,88 @@ all:
       - man-db
       - man-pages
       - texinfo
+
+      - go # will be required later for yay
+
+    packages:
+      - direnv # dotfiles: env per-project
+      - fish
+      - neovim
+      - openssh
+      - python-pip # to install ansible
+      - rsync
+      - starship # dotfiles: terminal prompt
+      - tmux
+      # utils
+      - bat # cat replacement
+      - exa # ls replacement
+      - fd # find replacement
+      - fzf # fuzzy search
+      - git-delta # git diff syntax highlighting
+      - htop
+      - jq
+      # network related
+      - ldns # drill
+      - mtr
+      - whois
+
+      # graphical
+      - alacritty # terminal emulator
+      - arandr # dotfiles: screen layout
+      - feh # dotfiles: wallpaper
+      - i3-gaps
+      - i3lock
+      - i3status
+      - ly # login screen
+      - xorg-server
+      - xss-lock # dotfiles: handle screensaver
+      # fonts
+      - noto-fonts
+      - noto-fonts-cjk
+      - noto-fonts-emoji
+      - ttf-fira-code
+      # dotfiles related
+      - brightnessctl # dotfiles: control brightness
+      - dunst # dotfiles: notifications
+      - imagemagick # dotfiles: lock screen
+      - maim # dotfiles: screenshot and lock screen
+      - rofi
+      - rofi-calc
+      - rofi-emoji
+
+      # common software
+      #- bitwarden
+      #- chromium
+      #- gnome-keyring # org.freedesktop.secrets
+      #- keepassxc
+      #- vlc
+      ## communication
+      #- discord
+      #- signal-desktop
+      #- skypeforlinux
+      #- slack-desktop
+      #- telegram-desktop
+      #- thunderbird
+
+      # audio
+      #- playerctl # dotfiles: control media player
+      ## music
+      #- mpc
+      #- mpd
+      #- mpd-mpris
+      #- ncmpcpp
+
+      # programming languages
+      #- deno
+      #- nodejs # dotfiles: neovim github copilot
+      #- go
+      ## dev tools
+      #- dbeaver # database client
+      #- docker
+      #- docker-compose
+      #- kubectl
+      #- visual-studio-code-bin
+
+    systemd_service_to_enable:
+      #- docker.socket
+      - ly.service
